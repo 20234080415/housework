@@ -1,0 +1,26 @@
+# HW02 Deep Learning Assignment - Python 3.10
+# Versions tested for compatibility
+
+# Core numerical computing
+numpy>=1.21.0,<1.27.0
+
+# PyTorch for deep learning (CPU or GPU - adjust as needed)
+torch>=1.12.0,<2.5.0
+torchvision>=0.13.0,<0.20.0
+
+# Machine learning utilities
+scikit-learn>=1.0.0,<1.4.0
+
+# Visualization
+matplotlib>=3.4.0,<3.9.0
+
+# Jupyter notebook support (optional)
+jupyter>=1.0.0,<2.0.0
+ipykernel>=6.0.0,<7.0.0
+
+# Notes for version management:
+# - numpy: 1.21+ required for Python 3.10, cap at <1.27.0 for stability
+# - torch: 1.12+ for Python 3.10 support, <2.5.0 maintains compatibility
+# - torchvision: must align with torch version (roughly same minor version)
+# - scikit-learn: 1.0+ drops Python <3.8, use <1.4.0 for stability
+# - matplotlib: 3.4+ for Python 3.10, <3.9.0 to avoid breaking changes
