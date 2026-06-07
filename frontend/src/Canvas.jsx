@@ -3,6 +3,7 @@ import axios from "axios";
 import { fabric } from "fabric";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const CANVAS_SIZE = 512;
 
 export default function Canvas() {
   const canvasElementRef = useRef(null);
@@ -13,18 +14,20 @@ export default function Canvas() {
   const [prompt, setPrompt] = useState("");
   const [steps, setSteps] = useState(20);
   const [cfgScale, setCfgScale] = useState(7.5);
-  const [cnScale] = useState(1.0);
+  const [cnScale, setCnScale] = useState(1.0);
   const [statusText, setStatusText] = useState("等待输入");
   const [isLoading, setIsLoading] = useState(false);
   const [resultImage, setResultImage] = useState("");
   const [errorText, setErrorText] = useState("");
+  const [taskId, setTaskId] = useState("");
 
   useEffect(() => {
     const canvas = new fabric.Canvas(canvasElementRef.current, {
       isDrawingMode: true,
-      backgroundColor: "#000000",
-      width: 512,
-      height: 512,
+      backgroundColor: "#050505",
+      width: CANVAS_SIZE,
+      height: CANVAS_SIZE,
+      selection: false,
     });
 
     canvas.freeDrawingBrush.width = brushWidth;
@@ -32,9 +35,7 @@ export default function Canvas() {
     fabricCanvasRef.current = canvas;
 
     return () => {
-      if (pollTimerRef.current) {
-        clearInterval(pollTimerRef.current);
-      }
+      stopPolling();
       canvas.dispose();
     };
   }, []);
@@ -46,10 +47,17 @@ export default function Canvas() {
     }
 
     canvas.freeDrawingBrush.width = brushWidth;
-    canvas.freeDrawingBrush.color = tool === "eraser" ? "#000000" : "#ffffff";
+    canvas.freeDrawingBrush.color = tool === "eraser" ? "#050505" : "#ffffff";
   }, [brushWidth, tool]);
 
-  const handleClear = () => {
+  const stopPolling = () => {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current);
+      pollTimerRef.current = null;
+    }
+  };
+
+  const resetCanvas = () => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) {
       return;
@@ -57,15 +65,8 @@ export default function Canvas() {
 
     // 清空画布后恢复黑色背景。
     canvas.clear();
-    canvas.setBackgroundColor("#000000", canvas.renderAll.bind(canvas));
+    canvas.setBackgroundColor("#050505", canvas.renderAll.bind(canvas));
     canvas.isDrawingMode = true;
-  };
-
-  const stopPolling = () => {
-    if (pollTimerRef.current) {
-      clearInterval(pollTimerRef.current);
-      pollTimerRef.current = null;
-    }
   };
 
   const buildImageSrc = (base64) => {
@@ -75,18 +76,22 @@ export default function Canvas() {
     return base64.startsWith("data:image") ? base64 : `data:image/png;base64,${base64}`;
   };
 
-  const pollTaskStatus = (taskId) => {
+  const updateFailedState = (message) => {
+    stopPolling();
+    setIsLoading(false);
+    setStatusText("等待输入");
+    setErrorText(message);
+  };
+
+  const pollTaskStatus = (nextTaskId) => {
     stopPolling();
     pollTimerRef.current = setInterval(async () => {
       try {
-        const response = await axios.get(`${API_URL}/api/status/${taskId}`);
+        const response = await axios.get(`${API_URL}/api/status/${nextTaskId}`);
         const payload = response.data;
 
         if (payload.code === 404) {
-          stopPolling();
-          setIsLoading(false);
-          setStatusText("等待输入");
-          setErrorText(payload.msg || "任务不存在");
+          updateFailedState(payload.msg || "任务不存在");
           return;
         }
 
@@ -100,23 +105,22 @@ export default function Canvas() {
         }
 
         if (taskStatus === "failed") {
-          stopPolling();
-          setIsLoading(false);
-          setStatusText("等待输入");
-          setErrorText("生成失败，请稍后重试");
+          updateFailedState("生成失败，请稍后重试");
         }
       } catch (error) {
-        stopPolling();
-        setIsLoading(false);
-        setStatusText("等待输入");
-        setErrorText(error.message || "状态查询失败");
+        updateFailedState(error.message || "状态查询失败");
       }
     }, 2000);
   };
 
   const handleGenerate = async () => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !prompt.trim()) {
+    if (!canvas) {
+      setErrorText("画板未初始化");
+      return;
+    }
+
+    if (!prompt.trim()) {
       setErrorText("请输入文本提示词");
       return;
     }
@@ -124,6 +128,7 @@ export default function Canvas() {
     try {
       setErrorText("");
       setResultImage("");
+      setTaskId("");
       setIsLoading(true);
       setStatusText("生成中...");
 
@@ -133,66 +138,65 @@ export default function Canvas() {
 
       const response = await axios.post(`${API_URL}/api/generate`, {
         sketch_base64: sketchBase64,
-        prompt,
+        prompt: prompt.trim(),
         steps,
         cfg_scale: cfgScale,
         cn_scale: cnScale,
       });
       const payload = response.data;
-      const taskId = payload.data?.task_id;
+      const nextTaskId = payload.data?.task_id;
 
-      if (!taskId) {
+      if (!nextTaskId) {
         throw new Error(payload.msg || "任务创建失败");
       }
 
-      pollTaskStatus(taskId);
+      setTaskId(nextTaskId);
+      pollTaskStatus(nextTaskId);
     } catch (error) {
-      setIsLoading(false);
-      setStatusText("等待输入");
-      setErrorText(error.message || "生成请求失败");
+      updateFailedState(error.message || "生成请求失败");
     }
   };
 
   return (
-    <section style={styles.workspace}>
-      <style>{`
-        @keyframes canvas-spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+    <section className="studio">
+      <article className="panel drawing-panel">
+        <div className="panel-heading">
+          <div>
+            <p className="section-kicker">Sketch</p>
+            <h2>画板</h2>
+          </div>
+          <span className="status-pill">{tool === "eraser" ? "橡皮擦" : "画笔"}</span>
+        </div>
 
-      <div style={styles.panel}>
-        <div style={styles.panelHeader}>
-          <h2 style={styles.title}>画板</h2>
-          <span style={styles.badge}>{tool === "eraser" ? "橡皮擦" : "画笔"}</span>
+        <div className="canvas-frame">
+          <canvas ref={canvasElementRef} width={CANVAS_SIZE} height={CANVAS_SIZE} />
         </div>
-        <div style={styles.canvasFrame}>
-          <canvas ref={canvasElementRef} width="512" height="512" />
-        </div>
-        <div style={styles.toolRow}>
+
+        <div className="tool-grid">
           <button
             type="button"
-            style={tool === "brush" ? styles.activeButton : styles.button}
+            className={tool === "brush" ? "tool-button active" : "tool-button"}
             onClick={() => setTool("brush")}
           >
             画笔
           </button>
           <button
             type="button"
-            style={tool === "eraser" ? styles.activeButton : styles.button}
+            className={tool === "eraser" ? "tool-button active" : "tool-button"}
             onClick={() => setTool("eraser")}
           >
             橡皮擦
           </button>
-          <button type="button" style={styles.secondaryButton} onClick={handleClear}>
+          <button type="button" className="tool-button ghost" onClick={resetCanvas}>
             清空
           </button>
         </div>
-        <label style={styles.label}>
-          粗细 {brushWidth}px
+
+        <label className="control-label">
+          <span>
+            画笔粗细 <strong>{brushWidth}px</strong>
+          </span>
           <input
-            style={styles.range}
             type="range"
             min="2"
             max="20"
@@ -200,203 +204,110 @@ export default function Canvas() {
             onChange={(event) => setBrushWidth(Number(event.target.value))}
           />
         </label>
-      </div>
+      </article>
 
-      <div style={styles.panel}>
-        <h2 style={styles.title}>控制</h2>
-        <label style={styles.label}>
-          提示词
+      <article className="panel control-panel">
+        <div className="panel-heading">
+          <div>
+            <p className="section-kicker">Prompt</p>
+            <h2>生成控制</h2>
+          </div>
+        </div>
+
+        <label className="control-label">
+          <span>文本提示词</span>
           <textarea
-            style={styles.textarea}
             value={prompt}
             placeholder="描述你想生成的图像..."
             onChange={(event) => setPrompt(event.target.value)}
           />
         </label>
-        <label style={styles.label}>
-          steps {steps}
-          <input
-            style={styles.range}
-            type="range"
-            min="10"
-            max="50"
-            value={steps}
-            onChange={(event) => setSteps(Number(event.target.value))}
-          />
-        </label>
-        <label style={styles.label}>
-          cfg_scale {cfgScale.toFixed(1)}
-          <input
-            style={styles.range}
-            type="range"
-            min="1"
-            max="15"
-            step="0.1"
-            value={cfgScale}
-            onChange={(event) => setCfgScale(Number(event.target.value))}
-          />
-        </label>
+
+        <div className="slider-stack">
+          <label className="control-label">
+            <span>
+              采样步数 <strong>{steps}</strong>
+            </span>
+            <input
+              type="range"
+              min="10"
+              max="50"
+              value={steps}
+              onChange={(event) => setSteps(Number(event.target.value))}
+            />
+          </label>
+
+          <label className="control-label">
+            <span>
+              CFG 强度 <strong>{cfgScale.toFixed(1)}</strong>
+            </span>
+            <input
+              type="range"
+              min="1"
+              max="15"
+              step="0.1"
+              value={cfgScale}
+              onChange={(event) => setCfgScale(Number(event.target.value))}
+            />
+          </label>
+
+          <label className="control-label">
+            <span>
+              ControlNet 强度 <strong>{cnScale.toFixed(1)}</strong>
+            </span>
+            <input
+              type="range"
+              min="0.1"
+              max="2"
+              step="0.1"
+              value={cnScale}
+              onChange={(event) => setCnScale(Number(event.target.value))}
+            />
+          </label>
+        </div>
+
         <button
           type="button"
-          style={styles.generateButton}
+          className="generate-button"
           disabled={isLoading}
           onClick={handleGenerate}
         >
-          生成图像
+          {isLoading ? "生成中..." : "生成图像"}
         </button>
-        {errorText ? <p style={styles.error}>{errorText}</p> : null}
-      </div>
 
-      <div style={styles.panel}>
-        <div style={styles.panelHeader}>
-          <h2 style={styles.title}>结果</h2>
-          <span style={styles.status}>{statusText}</span>
+        {taskId ? <p className="task-id">任务 ID：{taskId}</p> : null}
+        {errorText ? <p className="error-text">{errorText}</p> : null}
+      </article>
+
+      <article className="panel result-panel">
+        <div className="panel-heading">
+          <div>
+            <p className="section-kicker">Result</p>
+            <h2>生成结果</h2>
+          </div>
+          <span className="status-pill">{statusText}</span>
         </div>
-        <div style={styles.resultFrame}>
-          {isLoading ? <div style={styles.spinner} /> : null}
-          {!isLoading && resultImage ? (
-            <img style={styles.resultImage} src={resultImage} alt="生成结果" />
+
+        <div className="result-frame">
+          {isLoading ? (
+            <div className="loading-state">
+              <div className="spinner" />
+              <p>模型正在生成，请稍候</p>
+            </div>
           ) : null}
-          {!isLoading && !resultImage ? <span style={styles.emptyText}>等待输入</span> : null}
+
+          {!isLoading && resultImage ? (
+            <img className="result-image" src={resultImage} alt="生成结果" />
+          ) : null}
+
+          {!isLoading && !resultImage ? (
+            <div className="empty-result">
+              <span>等待输入</span>
+              <p>绘制草图并填写提示词后，结果会显示在这里。</p>
+            </div>
+          ) : null}
         </div>
-      </div>
+      </article>
     </section>
   );
 }
-
-const styles = {
-  workspace: {
-    display: "grid",
-    gridTemplateColumns: "minmax(280px, 540px) minmax(240px, 320px) minmax(280px, 540px)",
-    gap: "20px",
-    alignItems: "start",
-    maxWidth: "1440px",
-    margin: "0 auto",
-  },
-  panel: {
-    minWidth: 0,
-  },
-  panelHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: "12px",
-    marginBottom: "12px",
-  },
-  title: {
-    margin: "0 0 12px",
-    fontSize: "18px",
-    fontWeight: 700,
-  },
-  badge: {
-    padding: "4px 8px",
-    borderRadius: "6px",
-    color: "#ffffff",
-    background: "#111827",
-    fontSize: "13px",
-  },
-  canvasFrame: {
-    width: "512px",
-    maxWidth: "100%",
-    aspectRatio: "1 / 1",
-    border: "1px solid #111827",
-    background: "#000000",
-    overflow: "hidden",
-  },
-  toolRow: {
-    display: "flex",
-    gap: "8px",
-    flexWrap: "wrap",
-    marginTop: "14px",
-  },
-  button: {
-    border: 0,
-    borderRadius: "6px",
-    padding: "10px 14px",
-    color: "#111827",
-    background: "#e5e7eb",
-    cursor: "pointer",
-  },
-  activeButton: {
-    border: 0,
-    borderRadius: "6px",
-    padding: "10px 14px",
-    color: "#ffffff",
-    background: "#111827",
-    cursor: "pointer",
-  },
-  secondaryButton: {
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    padding: "10px 14px",
-    color: "#111827",
-    background: "#ffffff",
-    cursor: "pointer",
-  },
-  label: {
-    display: "grid",
-    gap: "8px",
-    marginTop: "16px",
-    fontSize: "14px",
-    fontWeight: 600,
-  },
-  range: {
-    width: "100%",
-  },
-  textarea: {
-    width: "100%",
-    minHeight: "160px",
-    resize: "vertical",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    padding: "12px",
-    font: "inherit",
-    lineHeight: 1.5,
-  },
-  generateButton: {
-    width: "100%",
-    marginTop: "20px",
-    border: 0,
-    borderRadius: "6px",
-    padding: "12px 16px",
-    color: "#ffffff",
-    background: "#2563eb",
-    cursor: "pointer",
-  },
-  error: {
-    margin: "12px 0 0",
-    color: "#b91c1c",
-    fontSize: "14px",
-  },
-  status: {
-    color: "#4b5563",
-    fontSize: "14px",
-  },
-  resultFrame: {
-    display: "grid",
-    placeItems: "center",
-    width: "512px",
-    maxWidth: "100%",
-    aspectRatio: "1 / 1",
-    border: "1px solid #d1d5db",
-    background: "#ffffff",
-    overflow: "hidden",
-  },
-  spinner: {
-    width: "48px",
-    height: "48px",
-    border: "5px solid #dbeafe",
-    borderTopColor: "#2563eb",
-    borderRadius: "50%",
-    animation: "canvas-spin 0.9s linear infinite",
-  },
-  resultImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "contain",
-  },
-  emptyText: {
-    color: "#6b7280",
-    fontSize: "14px",
-  },
-};

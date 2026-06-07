@@ -2,54 +2,346 @@
   box-sizing: border-box;
 }
 
+:root {
+  color: #f7f7f8;
+  background: #141414;
+  font-family: Inter, Arial, "Microsoft YaHei", sans-serif;
+}
+
 body {
+  min-width: 320px;
+  min-height: 100vh;
   margin: 0;
-  font-family: Arial, "Microsoft YaHei", sans-serif;
-  color: #ffffff;
-  background: #1a1a1a;
+  background:
+    radial-gradient(circle at top left, rgba(38, 106, 255, 0.18), transparent 32rem),
+    #141414;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
 }
 
 button {
-  border: 0;
-  border-radius: 6px;
-  padding: 10px 16px;
-  color: #ffffff;
-  background: #2563eb;
-  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease,
+    opacity 0.18s ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .app {
+  width: min(1480px, 100%);
   min-height: 100vh;
-  padding: 24px;
+  margin: 0 auto;
+  padding: 28px;
 }
 
 .app-header {
-  max-width: 960px;
-  margin: 0 auto 28px;
-  text-align: center;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.eyebrow,
+.section-kicker {
+  margin: 0 0 8px;
+  color: #7dd3fc;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 .app-header h1 {
   margin: 0;
-  font-size: 32px;
+  font-size: 34px;
+  line-height: 1.15;
 }
 
-.app-header p {
+.subtitle {
   margin: 10px 0 0;
-  color: #d1d5db;
+  color: #c7c7ce;
   font-size: 16px;
 }
 
-.canvas-shell {
-  width: 512px;
-  max-width: 100%;
-  margin: 0 auto;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
+.header-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
-canvas {
+.header-meta span,
+.status-pill {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 7px 11px;
+  color: #e7e7ea;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.studio {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.12fr) minmax(280px, 0.82fr) minmax(320px, 1.12fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.panel {
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 18px;
+  background: rgba(32, 32, 34, 0.92);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+}
+
+.panel-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.canvas-frame,
+.result-frame {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 512px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.canvas-frame {
+  background: #050505;
+}
+
+.canvas-frame canvas {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+}
+
+.result-frame {
+  position: relative;
+  background:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%),
+    #111113;
+  background-size: 22px 22px;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.tool-button,
+.generate-button {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #f7f7f8;
+  cursor: pointer;
+}
+
+.tool-button {
+  min-height: 42px;
+  background: #2c2c31;
+}
+
+.tool-button.active {
+  border-color: rgba(125, 211, 252, 0.72);
+  background: #0f5f87;
+}
+
+.tool-button.ghost {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: transparent;
+}
+
+.control-label {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+  color: #e8e8eb;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.control-label span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.control-label strong {
+  color: #7dd3fc;
+  font-weight: 800;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: #38bdf8;
+}
+
+textarea {
+  width: 100%;
+  min-height: 178px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 13px 14px;
+  color: #f7f7f8;
+  background: #151518;
+  line-height: 1.55;
+  resize: vertical;
+  outline: none;
+}
+
+textarea:focus {
+  border-color: rgba(125, 211, 252, 0.72);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.16);
+}
+
+.slider-stack {
+  display: grid;
+  gap: 4px;
+}
+
+.generate-button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 20px;
+  background: #2563eb;
+  font-weight: 800;
+}
+
+.generate-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.task-id,
+.error-text {
+  margin: 12px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.task-id {
+  color: #a7f3d0;
+}
+
+.error-text {
+  color: #fca5a5;
+}
+
+.loading-state,
+.empty-result {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(125, 211, 252, 0.16);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+.loading-state p,
+.empty-result p {
+  margin: 0;
+  color: #b8b8c0;
+  font-size: 14px;
+}
+
+.empty-result span {
+  color: #f7f7f8;
+  font-weight: 800;
+}
+
+.result-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1180px) {
+  .studio {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .control-panel {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 760px) {
+  .app {
+    padding: 18px;
+  }
+
+  .app-header {
+    display: grid;
+  }
+
+  .header-meta {
+    justify-content: flex-start;
+  }
+
+  .app-header h1 {
+    font-size: 28px;
+  }
+
+  .studio {
+    grid-template-columns: 1fr;
+  }
+
+  .control-panel {
+    grid-column: auto;
+  }
+
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
 }
