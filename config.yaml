@@ -1,0 +1,22 @@
+server:
+  host: 0.0.0.0
+  port: 8000
+redis:
+  host: localhost
+  port: 6379
+  db: 0
+  ttl: 3600
+celery:
+  broker: redis://localhost:6379/0
+  backend: redis://localhost:6379/0
+models:
+  sd_path: /root/models/sd-v1-5
+  controlnet_path: /root/models/controlnet-canny
+inference:
+  default_steps: 20
+  default_cfg: 7.5
+  default_cn_scale: 1.0
+  image_size: 512
+canny:
+  low_threshold: 100
+  high_threshold: 200
