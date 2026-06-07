@@ -1,23 +1,54 @@
 from pathlib import Path
 
+import torch
 import yaml
+from diffusers import (
+    ControlNetModel,
+    StableDiffusionControlNetPipeline,
+    UniPCMultistepScheduler,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
+_pipeline = None
 
 
 def load_config():
-    """读取模型配置。"""
+    """读取项目配置。"""
     with open(BASE_DIR / "config.yaml", "r", encoding="utf-8") as file:
         return yaml.safe_load(file)
 
 
-class SketchToImageModel:
-    """草图生成图像模型占位类。"""
+def get_pipeline():
+    """获取全局单例推理管线。"""
+    global _pipeline
 
-    def __init__(self):
-        self.config = load_config()
+    if _pipeline is not None:
+        return _pipeline
 
-    def generate(self, prompt, sketch_path):
-        """后续接入 diffusers 与 ControlNet 推理。"""
-        raise NotImplementedError("模型推理将在后续任务中实现")
+    config = load_config()
+    model_config = config["models"]
+
+    # 加载 ControlNet 模型。
+    controlnet = ControlNetModel.from_pretrained(
+        model_config["controlnet_path"],
+        torch_dtype=torch.float16,
+    )
+
+    # 加载 Stable Diffusion + ControlNet 推理管线，并关闭安全检查。
+    pipeline = StableDiffusionControlNetPipeline.from_pretrained(
+        model_config["sd_path"],
+        controlnet=controlnet,
+        torch_dtype=torch.float16,
+        safety_checker=None,
+    )
+
+    # 使用 UniPC 调度器提升采样效率。
+    pipeline.scheduler = UniPCMultistepScheduler.from_config(pipeline.scheduler.config)
+
+    # 开启显存优化能力。
+    pipeline.enable_model_cpu_offload()
+    pipeline.enable_xformers_memory_efficient_attention()
+
+    _pipeline = pipeline
+    return _pipeline
