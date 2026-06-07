@@ -1,16 +1,18 @@
 {
+  "name": "controlnet-sketch-frontend",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "^4.2.1",
     "axios": "^1.7.2",
     "fabric": "^5.3.0",
-    "vite": "^5.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.2.0"
+  }
 }

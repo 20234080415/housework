@@ -5,8 +5,8 @@
 body {
   margin: 0;
   font-family: Arial, "Microsoft YaHei", sans-serif;
-  color: #111827;
-  background: #f3f4f6;
+  color: #ffffff;
+  background: #1a1a1a;
 }
 
 button {
@@ -23,17 +23,21 @@ button {
   padding: 24px;
 }
 
-.toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.app-header {
   max-width: 960px;
-  margin: 0 auto 20px;
+  margin: 0 auto 28px;
+  text-align: center;
 }
 
-.toolbar h1 {
+.app-header h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 32px;
+}
+
+.app-header p {
+  margin: 10px 0 0;
+  color: #d1d5db;
+  font-size: 16px;
 }
 
 .canvas-shell {
