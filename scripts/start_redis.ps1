@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$MemuraiExe = "E:/dp_design/housework/tools/MemuraiDeveloper/tools/memurai.exe",
     [int]$Port = 6379
 )
