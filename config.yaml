@@ -10,8 +10,8 @@ celery:
   broker: redis://localhost:6379/0
   backend: redis://localhost:6379/0
 models:
-  sd_path: /root/models/sd-v1-5
-  controlnet_path: /root/models/controlnet-canny
+  sd_path: E:/dp_design/housework/models/sd-v1-5
+  controlnet_path: E:/dp_design/housework/models/controlnet-canny
 inference:
   default_steps: 20
   default_cfg: 7.5

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MODEL_ROOT="/root/models"
+MODEL_ROOT="${MODEL_ROOT:-/root/models}"
 SD_REPO="runwayml/stable-diffusion-v1-5"
 CONTROLNET_REPO="lllyasviel/sd-controlnet-canny"
 SD_DIR="${MODEL_ROOT}/sd-v1-5"
@@ -53,7 +53,7 @@ download_model() {
     download_with_huggingface "${repo_id}" "${target_dir}"
   else
     echo "未找到 modelscope 或 huggingface-cli，请先安装其中一个工具"
-    echo "推荐：pip install modelscope"
+    echo "推荐：pip install huggingface_hub"
     exit 1
   fi
 

@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 import torch
@@ -11,6 +12,7 @@ from diffusers import (
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 _pipeline = None
+logger = logging.getLogger(__name__)
 
 
 def load_config():
@@ -48,7 +50,10 @@ def get_pipeline():
 
     # 开启显存优化能力。
     pipeline.enable_model_cpu_offload()
-    pipeline.enable_xformers_memory_efficient_attention()
+    try:
+        pipeline.enable_xformers_memory_efficient_attention()
+    except Exception as exc:
+        logger.warning("xFormers 不可用，已跳过显存高效注意力：%s", exc)
 
     _pipeline = pipeline
     return _pipeline
