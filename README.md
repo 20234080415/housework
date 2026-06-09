@@ -1,3 +1,10 @@
+## 效果展示
+
+<img width="1919" height="1079" alt="屏幕截图 2026-06-09 134733" src="https://github.com/user-attachments/assets/66f6754a-9c4a-4e8d-ac85-9144d8768fb9" />
+<img width="1919" height="1079" alt="屏幕截图 2026-06-09 134908" src="https://github.com/user-attachments/assets/066e1558-7d61-4227-8fac-790ae57b0414" />
+<img width="1919" height="1079" alt="屏幕截图 2026-06-09 134717" src="https://github.com/user-attachments/assets/2c12756a-cb13-4b70-b57f-d04b41e9f51f" />
+
+
 # 草图引导图像生成系统
 
 基于 ControlNet + Stable Diffusion v1.5 的草图引导图像生成系统。前端使用 React + Fabric.js 提供 512×512 画板，后端使用 FastAPI + Celery + Redis 异步执行图像生成任务。
