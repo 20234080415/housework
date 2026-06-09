@@ -4,6 +4,7 @@ __pycache__/
 .env
 .env.*
 /models/
+/data/
 /tools/
 /dump.rdb
 /outputs/*

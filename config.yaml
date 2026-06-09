@@ -25,3 +25,27 @@ inference:
 canny:
   low_threshold: 100
   high_threshold: 200
+experiment:
+  dataset_root: E:/dp_design/housework/data/sketchy
+  output_dir: E:/dp_design/housework/outputs/experiment
+  categories:
+    - airplane
+    - cat
+    - dog
+    - car_(sedan)
+    - horse
+  sample_index: 0
+  seed: 42
+  inference_steps: 15
+  width: 512
+  height: 512
+  baseline_control_scale: 0.0
+  main_control_scale: 0.8
+  ablation_scales:
+    - 0.0
+    - 0.4
+    - 0.8
+    - 1.2
+    - 1.6
+  clip_model: openai/clip-vit-base-patch32
+  fid_feature_dim: 64
