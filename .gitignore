@@ -5,6 +5,7 @@ __pycache__/
 .env.*
 /models/
 /tools/
+/dump.rdb
 /outputs/*
 !outputs/.gitkeep
 node_modules/

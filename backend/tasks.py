@@ -70,6 +70,14 @@ def _build_canny_image(sketch_image):
     return Image.fromarray(edges_rgb)
 
 
+def _build_prompt(prompt):
+    """组合用户提示词和配置中的质量提示词。"""
+    prompt_suffix = config["inference"]["prompt_suffix"].strip()
+    if not prompt_suffix:
+        return prompt.strip()
+    return f"{prompt.strip()}, {prompt_suffix}"
+
+
 @celery_app.task(name="generate_image")
 def generate_image(task_id, sketch_base64, prompt, steps, cfg_scale, cn_scale):
     """异步执行草图引导图像生成。"""
@@ -81,11 +89,14 @@ def generate_image(task_id, sketch_base64, prompt, steps, cfg_scale, cn_scale):
 
         pipeline = get_pipeline()
         result = pipeline(
-            prompt=prompt,
+            prompt=_build_prompt(prompt),
+            negative_prompt=config["inference"]["negative_prompt"],
             image=canny_image,
             num_inference_steps=steps,
             guidance_scale=cfg_scale,
             controlnet_conditioning_scale=cn_scale,
+            control_guidance_start=config["inference"]["control_guidance_start"],
+            control_guidance_end=config["inference"]["control_guidance_end"],
         )
         result_image = result.images[0]
         result_base64 = _image_to_base64(result_image)

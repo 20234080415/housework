@@ -5,6 +5,7 @@ import torch
 import yaml
 from diffusers import (
     ControlNetModel,
+    DPMSolverMultistepScheduler,
     StableDiffusionControlNetPipeline,
     UniPCMultistepScheduler,
 )
@@ -45,8 +46,18 @@ def get_pipeline():
         safety_checker=None,
     )
 
-    # 使用 UniPC 调度器提升采样效率。
-    pipeline.scheduler = UniPCMultistepScheduler.from_config(pipeline.scheduler.config)
+    # 根据配置选择采样调度器。
+    scheduler_name = config["inference"]["scheduler"]
+    if scheduler_name == "dpmpp_2m_karras":
+        pipeline.scheduler = DPMSolverMultistepScheduler.from_config(
+            pipeline.scheduler.config,
+            algorithm_type="dpmsolver++",
+            use_karras_sigmas=True,
+        )
+    elif scheduler_name == "unipc":
+        pipeline.scheduler = UniPCMultistepScheduler.from_config(pipeline.scheduler.config)
+    else:
+        raise ValueError(f"不支持的调度器：{scheduler_name}")
 
     # 开启显存优化能力。
     pipeline.enable_model_cpu_offload()

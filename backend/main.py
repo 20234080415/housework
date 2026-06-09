@@ -44,9 +44,9 @@ class GenerateRequest(BaseModel):
 
     sketch_base64: str
     prompt: str
-    steps: int = 20
-    cfg_scale: float = 7.5
-    cn_scale: float = 1.0
+    steps: int = config["inference"]["default_steps"]
+    cfg_scale: float = config["inference"]["default_cfg"]
+    cn_scale: float = config["inference"]["default_cn_scale"]
 
 
 def ok(data=None, msg="ok"):
@@ -99,6 +99,19 @@ def get_task_status(task_id: str):
 def health():
     """健康检查。"""
     return {"status": "ok"}
+
+
+@app.get("/api/settings")
+def get_public_settings():
+    """返回前端可使用的默认推理参数。"""
+    inference_config = config["inference"]
+    return ok(
+        {
+            "steps": inference_config["default_steps"],
+            "cfg_scale": inference_config["default_cfg"],
+            "cn_scale": inference_config["default_cn_scale"],
+        }
+    )
 
 
 if __name__ == "__main__":

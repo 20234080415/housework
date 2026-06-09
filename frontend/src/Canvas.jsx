@@ -12,9 +12,10 @@ export default function Canvas() {
   const [brushWidth, setBrushWidth] = useState(6);
   const [tool, setTool] = useState("brush");
   const [prompt, setPrompt] = useState("");
-  const [steps, setSteps] = useState(20);
-  const [cfgScale, setCfgScale] = useState(7.5);
-  const [cnScale, setCnScale] = useState(1.0);
+  const [steps, setSteps] = useState(null);
+  const [cfgScale, setCfgScale] = useState(null);
+  const [cnScale, setCnScale] = useState(null);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [statusText, setStatusText] = useState("等待输入");
   const [isLoading, setIsLoading] = useState(false);
   const [resultImage, setResultImage] = useState("");
@@ -38,6 +39,24 @@ export default function Canvas() {
       stopPolling();
       canvas.dispose();
     };
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get(`${API_URL}/api/settings`)
+      .then((response) => {
+        const settings = response.data?.data;
+        if (!settings) {
+          return;
+        }
+        setSteps(settings.steps);
+        setCfgScale(settings.cfg_scale);
+        setCnScale(settings.cn_scale);
+        setSettingsLoaded(true);
+      })
+      .catch(() => {
+        setErrorText("无法读取后端推理配置，请确认 API 服务已启动");
+      });
   }, []);
 
   useEffect(() => {
@@ -218,7 +237,7 @@ export default function Canvas() {
           <span>文本提示词</span>
           <textarea
             value={prompt}
-            placeholder="描述你想生成的图像..."
+            placeholder="建议使用英文，例如：a modern house, garden, sunset, architectural visualization"
             onChange={(event) => setPrompt(event.target.value)}
           />
         </label>
@@ -232,35 +251,35 @@ export default function Canvas() {
               type="range"
               min="10"
               max="50"
-              value={steps}
+              value={steps ?? ""}
               onChange={(event) => setSteps(Number(event.target.value))}
             />
           </label>
 
           <label className="control-label">
             <span>
-              CFG 强度 <strong>{cfgScale.toFixed(1)}</strong>
+              CFG 强度 <strong>{cfgScale?.toFixed(1) ?? "-"}</strong>
             </span>
             <input
               type="range"
               min="1"
               max="15"
               step="0.1"
-              value={cfgScale}
+              value={cfgScale ?? ""}
               onChange={(event) => setCfgScale(Number(event.target.value))}
             />
           </label>
 
           <label className="control-label">
             <span>
-              ControlNet 强度 <strong>{cnScale.toFixed(1)}</strong>
+              ControlNet 强度 <strong>{cnScale?.toFixed(1) ?? "-"}</strong>
             </span>
             <input
               type="range"
               min="0.1"
               max="2"
               step="0.1"
-              value={cnScale}
+              value={cnScale ?? ""}
               onChange={(event) => setCnScale(Number(event.target.value))}
             />
           </label>
@@ -269,7 +288,7 @@ export default function Canvas() {
         <button
           type="button"
           className="generate-button"
-          disabled={isLoading}
+          disabled={isLoading || !settingsLoaded}
           onClick={handleGenerate}
         >
           {isLoading ? "生成中..." : "生成图像"}

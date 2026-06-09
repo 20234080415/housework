@@ -13,10 +13,15 @@ models:
   sd_path: E:/dp_design/housework/models/sd-v1-5
   controlnet_path: E:/dp_design/housework/models/controlnet-canny
 inference:
-  default_steps: 20
-  default_cfg: 7.5
-  default_cn_scale: 1.0
+  default_steps: 30
+  default_cfg: 7.0
+  default_cn_scale: 0.8
   image_size: 512
+  scheduler: dpmpp_2m_karras
+  control_guidance_start: 0.0
+  control_guidance_end: 0.85
+  prompt_suffix: "masterpiece, best quality, highly detailed, professional composition, realistic lighting"
+  negative_prompt: "low quality, worst quality, blurry, deformed, distorted, bad anatomy, bad proportions, extra limbs, duplicate, watermark, text, logo, jpeg artifacts"
 canny:
   low_threshold: 100
   high_threshold: 200
